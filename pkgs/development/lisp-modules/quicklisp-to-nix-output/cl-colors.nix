@@ -7,7 +7,7 @@ rec {
 
   description = ''Simple color library for Common Lisp'';
 
-  deps = [ args."alexandria" args."anaphora" args."let-plus" args."lift" ];
+  deps = [ args."alexandria" args."anaphora" args."let-plus" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/cl-colors/2015-12-18/cl-colors-20151218-git.tgz'';
@@ -24,6 +24,6 @@ rec {
     http://beta.quicklisp.org/archive/cl-colors/2015-12-18/cl-colors-20151218-git.tgz
     MD5 2963c3e7aca2c5db2132394f83716515 NAME cl-colors FILENAME cl-colors DEPS
     ((NAME alexandria FILENAME alexandria) (NAME anaphora FILENAME anaphora)
-     (NAME let-plus FILENAME let-plus) (NAME lift FILENAME lift))
-    DEPENDENCIES (alexandria anaphora let-plus lift) VERSION 20151218-git
-    SIBLINGS NIL PARASITES (cl-colors-tests)) */
+     (NAME let-plus FILENAME let-plus))
+    DEPENDENCIES (alexandria anaphora let-plus) VERSION 20151218-git SIBLINGS
+    NIL PARASITES (cl-colors-tests)) */

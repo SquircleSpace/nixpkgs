@@ -7,7 +7,7 @@ rec {
 
   description = '''';
 
-  deps = [ args."alexandria" args."bordeaux-threads" args."fiveam" args."pcall-queue" ];
+  deps = [ args."alexandria" args."bordeaux-threads" args."pcall-queue" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/pcall/2010-10-06/pcall-0.3.tgz'';
@@ -25,6 +25,6 @@ rec {
     019d85dfd1d5d0ee8d4ee475411caf6b NAME pcall FILENAME pcall DEPS
     ((NAME alexandria FILENAME alexandria)
      (NAME bordeaux-threads FILENAME bordeaux-threads)
-     (NAME fiveam FILENAME fiveam) (NAME pcall-queue FILENAME pcall-queue))
-    DEPENDENCIES (alexandria bordeaux-threads fiveam pcall-queue) VERSION 0.3
-    SIBLINGS (pcall-queue) PARASITES (pcall-tests)) */
+     (NAME pcall-queue FILENAME pcall-queue))
+    DEPENDENCIES (alexandria bordeaux-threads pcall-queue) VERSION 0.3 SIBLINGS
+    (pcall-queue) PARASITES (pcall-tests)) */

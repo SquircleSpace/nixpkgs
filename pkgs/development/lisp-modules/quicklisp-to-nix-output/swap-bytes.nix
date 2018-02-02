@@ -7,7 +7,7 @@ rec {
 
   description = ''Optimized byte-swapping primitives.'';
 
-  deps = [ args."fiveam" args."trivial-features" ];
+  deps = [ args."trivial-features" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/swap-bytes/2016-09-29/swap-bytes-v1.1.tgz'';
@@ -23,8 +23,5 @@ rec {
     0snwbfplqhg1y4y4m7lgvksg1hs0sygfikz3rlbkfl4gwg8pq8ky URL
     http://beta.quicklisp.org/archive/swap-bytes/2016-09-29/swap-bytes-v1.1.tgz
     MD5 dda8b3b0a4e345879e80a3cc398667bb NAME swap-bytes FILENAME swap-bytes
-    DEPS
-    ((NAME fiveam FILENAME fiveam)
-     (NAME trivial-features FILENAME trivial-features))
-    DEPENDENCIES (fiveam trivial-features) VERSION v1.1 SIBLINGS NIL PARASITES
-    (swap-bytes/test)) */
+    DEPS ((NAME trivial-features FILENAME trivial-features)) DEPENDENCIES
+    (trivial-features) VERSION v1.1 SIBLINGS NIL PARASITES (swap-bytes/test)) */

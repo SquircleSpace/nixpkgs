@@ -7,7 +7,7 @@ rec {
 
   description = ''A generic container library for Common Lisp'';
 
-  deps = [ args."asdf-system-connections" args."metatilities-base" args."moptilities" ];
+  deps = [ args."asdf-system-connections" args."metatilities-base" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/cl-containers/2017-04-03/cl-containers-20170403-git.tgz'';
@@ -26,8 +26,7 @@ rec {
     MD5 17123cd2b018cd3eb048eceef78be3f8 NAME cl-containers FILENAME
     cl-containers DEPS
     ((NAME asdf-system-connections FILENAME asdf-system-connections)
-     (NAME metatilities-base FILENAME metatilities-base)
-     (NAME moptilities FILENAME moptilities))
-    DEPENDENCIES (asdf-system-connections metatilities-base moptilities)
-    VERSION 20170403-git SIBLINGS (cl-containers-test) PARASITES
+     (NAME metatilities-base FILENAME metatilities-base))
+    DEPENDENCIES (asdf-system-connections metatilities-base) VERSION
+    20170403-git SIBLINGS (cl-containers-test) PARASITES
     (cl-containers/with-moptilities cl-containers/with-utilities)) */

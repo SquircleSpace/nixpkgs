@@ -7,7 +7,7 @@ rec {
 
   description = ''Serialization package'';
 
-  deps = [ args."rt" ];
+  deps = [ ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/cl-store/2016-05-31/cl-store-20160531-git.tgz'';
@@ -23,5 +23,5 @@ rec {
     0j1pfgvzy6l7hb68xsz2dghsa94lip7caq6f6608jsqadmdswljz URL
     http://beta.quicklisp.org/archive/cl-store/2016-05-31/cl-store-20160531-git.tgz
     MD5 8b3f33956b05d8e900346663f6abca3c NAME cl-store FILENAME cl-store DEPS
-    ((NAME rt FILENAME rt)) DEPENDENCIES (rt) VERSION 20160531-git SIBLINGS NIL
-    PARASITES (cl-store-tests)) */
+    NIL DEPENDENCIES NIL VERSION 20160531-git SIBLINGS NIL PARASITES
+    (cl-store-tests)) */

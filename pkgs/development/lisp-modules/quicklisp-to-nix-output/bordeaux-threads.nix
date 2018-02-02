@@ -7,7 +7,7 @@ rec {
 
   description = ''Bordeaux Threads makes writing portable multi-threaded apps simple.'';
 
-  deps = [ args."alexandria" args."fiveam" ];
+  deps = [ args."alexandria" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/bordeaux-threads/2016-03-18/bordeaux-threads-v0.8.5.tgz'';
@@ -24,7 +24,5 @@ rec {
     09q1xd3fca6ln6mh45cx24xzkrcnvhgl5nn9g2jv0rwj1m2xvbpd URL
     http://beta.quicklisp.org/archive/bordeaux-threads/2016-03-18/bordeaux-threads-v0.8.5.tgz
     MD5 67e363a363e164b6f61a047957b8554e NAME bordeaux-threads FILENAME
-    bordeaux-threads DEPS
-    ((NAME alexandria FILENAME alexandria) (NAME fiveam FILENAME fiveam))
-    DEPENDENCIES (alexandria fiveam) VERSION v0.8.5 SIBLINGS NIL PARASITES
-    (bordeaux-threads/test)) */
+    bordeaux-threads DEPS ((NAME alexandria FILENAME alexandria)) DEPENDENCIES
+    (alexandria) VERSION v0.8.5 SIBLINGS NIL PARASITES (bordeaux-threads/test)) */

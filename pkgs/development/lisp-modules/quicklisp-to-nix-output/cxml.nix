@@ -7,7 +7,7 @@ rec {
 
   description = '''';
 
-  deps = [ args."alexandria" args."babel" args."closure-common" args."puri" args."trivial-features" args."trivial-gray-streams" ];
+  deps = [ args."alexandria" args."babel" args."closure-common" args."cxml-dom" args."cxml-klacks" args."cxml-test" args."cxml-xml" args."puri" args."trivial-features" args."trivial-gray-streams" ];
 
   src = fetchurl {
     url = ''http://beta.quicklisp.org/archive/cxml/2011-06-19/cxml-20110619-git.tgz'';
@@ -24,11 +24,14 @@ rec {
     http://beta.quicklisp.org/archive/cxml/2011-06-19/cxml-20110619-git.tgz MD5
     587755dff60416d4f716f4e785cf747e NAME cxml FILENAME cxml DEPS
     ((NAME alexandria FILENAME alexandria) (NAME babel FILENAME babel)
-     (NAME closure-common FILENAME closure-common) (NAME puri FILENAME puri)
+     (NAME closure-common FILENAME closure-common)
+     (NAME cxml-dom FILENAME cxml-dom) (NAME cxml-klacks FILENAME cxml-klacks)
+     (NAME cxml-test FILENAME cxml-test) (NAME cxml-xml FILENAME cxml-xml)
+     (NAME puri FILENAME puri)
      (NAME trivial-features FILENAME trivial-features)
      (NAME trivial-gray-streams FILENAME trivial-gray-streams))
     DEPENDENCIES
-    (alexandria babel closure-common puri trivial-features
-     trivial-gray-streams)
+    (alexandria babel closure-common cxml-dom cxml-klacks cxml-test cxml-xml
+     puri trivial-features trivial-gray-streams)
     VERSION 20110619-git SIBLINGS NIL PARASITES
     (cxml-dom cxml-klacks cxml-test cxml-xml)) */
