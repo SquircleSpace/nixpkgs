@@ -6,7 +6,7 @@ self = rec {
   buildInputs = [
     gcc stdenv
     openssl fuse libuv mysql.connector-c libfixposix libev sqlite
-    freetds
+    freetds sbcl
     lispPackages.quicklisp-to-nix lispPackages.quicklisp-to-nix-system-info
   ];
   CPATH = "${libfixposix}/include";

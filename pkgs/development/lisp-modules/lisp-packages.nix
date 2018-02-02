@@ -45,7 +45,7 @@ let lispPackages = rec {
       lispPackages.quicklisp coreutils
     ];
     touch = coreutils;
-    nix-prefetch-url = nix;
+    nix-hash = nix;
     inherit quicklisp;
     buildPhase = ''
       ${sbcl}/bin/sbcl --eval '(load #P"${asdf}/lib/common-lisp/asdf/build/asdf.lisp")' --load $src/system-info.lisp --eval '(ql-to-nix-system-info::dump-image)'
@@ -64,7 +64,7 @@ let lispPackages = rec {
     buildDependencies = [sbcl quicklisp-to-nix-system-info];
     buildInputs = with pkgs.lispPackages; [md5 cl-emb alexandria external-program];
     touch = coreutils;
-    nix-prefetch-url = nix;
+    nix-hash = nix;
     inherit quicklisp;
     deps = [];
     system-info = quicklisp-to-nix-system-info;

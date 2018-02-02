@@ -1,6 +1,6 @@
 (defpackage :ql-to-nix-util
   (:use :common-lisp)
-  (:export #:nix-prefetch-url #:wrap #:pathname-as-directory #:copy-directory-tree #:with-temporary-directory #:sym #:with-temporary-asdf-cache #:with-asdf-cache)
+  (:export #:nix-hash #:wrap #:pathname-as-directory #:copy-directory-tree #:with-temporary-directory #:sym #:with-temporary-asdf-cache #:with-asdf-cache)
   (:documentation
    "A collection of useful functions and macros that ql-to-nix will use."))
 (in-package :ql-to-nix-util)
@@ -31,27 +31,15 @@ This is sort of like putting a / at the end of the path."
 
     (make-pathname :name nil :directory new-dir :type nil :defaults pathname)))
 
-(defvar *nix-prefetch-url-bin*
-  (namestring (merge-pathnames #P"bin/nix-prefetch-url" (pathname-as-directory (uiop:getenv "nix-prefetch-url"))))
-  "The path to the nix-prefetch-url binary")
+(defvar *nix-hash-bin*
+  (namestring (merge-pathnames #P"bin/nix-hash" (pathname-as-directory (uiop:getenv "nix-hash"))))
+  "The path to the nix-hash binary")
 
-(defun nix-prefetch-url (url &key expected-sha256)
-  "Invoke the nix-prefetch-url program.
-
-Returns a plist with two keys.
-:sha256 => The sha of the fetched file
-:path => The path to the file in the nix store"
-  (when expected-sha256
-    (setf expected-sha256 (list expected-sha256)))
-  (let* ((stdout
-          (with-output-to-string (so)
-            (uiop:run-program
-             `(,*nix-prefetch-url-bin* "--print-path" ,url ,@expected-sha256)
-             :output so)))
-         (stream (make-string-input-stream stdout)))
-    (list
-     :sha256 (read-line stream)
-     :path (read-line stream))))
+(defun nix-hash (path)
+  "Return the base32 hash of the given path"
+  (uiop:run-program
+   `(,*nix-hash-bin* "--type" "sha256" "--base32" "--flat" ,path)
+   :output '(:string :stripped t)))
 
 (defmacro wrap (package symbol-name)
   "Create a function which looks up the named symbol at runtime and

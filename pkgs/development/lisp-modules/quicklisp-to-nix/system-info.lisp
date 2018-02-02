@@ -336,15 +336,14 @@ quicklisp-to-nix."
        (ql-sibling-systems (provided-systems ql-release))
        (url (archive-url ql-release))
        (local-archive (local-archive-file ql-release))
-       (local-url (format nil "file://~a" (pathname local-archive)))
-       (archive-data
+       (archive-sha256
         (progn
           (ensure-local-archive-file ql-release)
           ;; Stuff this archive into the nix store.  It was almost
           ;; certainly going to end up there anyway (since it will
           ;; probably be fetchurl'd for a nix package).  Also, putting
           ;; it into the store also gives us the SHA we need.
-          (nix-prefetch-url local-url)))
+          (nix-hash (namestring local-archive))))
        (ideal-md5 (archive-md5 ql-release))
        (raw-dependencies (coerce dependencies 'list))
        (name (string-downcase (format nil "~a" system)))
@@ -357,7 +356,7 @@ quicklisp-to-nix."
     (list
      :system system
      :description description
-     :sha256 (getf archive-data :sha256)
+     :sha256 archive-sha256
      :url url
      :md5 ideal-md5
      :name name

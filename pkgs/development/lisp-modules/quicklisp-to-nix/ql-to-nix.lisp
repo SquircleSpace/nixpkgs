@@ -30,9 +30,6 @@
 (wrap :alexandria read-file-into-string)
 (wrap :alexandria write-string-into-file)
 
-(push :md5 *required-systems*)
-(wrap :md5 md5sum-file)
-
 (wrap :ql-dist find-system)
 (wrap :ql-dist release)
 (wrap :ql-dist provided-systems)
@@ -152,11 +149,6 @@ This function stores results for memoization purposes in files within
 
     (let* ((url (getf system-info :url))
            (sha256 (getf system-info :sha256))
-           (archive-data (nix-prefetch-url url :expected-sha256 sha256))
-           (archive-path (getf archive-data :path))
-           (archive-md5 (string-downcase
-                         (format nil "~{~16,2,'0r~}"
-                                 (map 'list 'identity (md5sum-file archive-path)))))
            (stated-md5 (getf system-info :md5))
            (dependencies (getf system-info :dependencies))
            (deps (mapcar (lambda (x) (list :name x :filename (escape-filename x)))
@@ -167,7 +159,6 @@ This function stores results for memoization purposes in files within
            (parasites (getf system-info :parasites))
            (version (regex-replace-all
                      (format nil "~a-" name) release-name "")))
-      (assert (equal archive-md5 stated-md5))
       (set-memoized-system-data
        system
        (list
