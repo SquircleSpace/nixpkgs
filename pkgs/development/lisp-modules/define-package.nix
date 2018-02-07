@@ -1,10 +1,10 @@
 args @ {stdenv, clwrapper, baseName, packageName ? baseName
   , parasites ? []
-  , buildSystems ? ([packageName] ++ parasites)
+  , buildSystems ? ([packageName])
   , version ? "latest"
   , src, description, deps, buildInputs ? [], meta ? {}, overrides?(x: {})
   , propagatedBuildInputs ? []
-  , asdFilesToKeep ? [(builtins.concatStringsSep "" [packageName ".asd"])]}:
+  , asdFilesToKeep ? [(builtins.concatStringsSep "" [(builtins.head (stdenv.lib.splitString "/" packageName)) ".asd"])]}:
 let
   deployConfigScript = ''
     outhash="$out"
@@ -46,7 +46,7 @@ let
     echo "export LD_LIBRARY_PATH=\"\$NIX_LISP_LD_LIBRARY_PATH\''${NIX_LISP_LD_LIBRARY_PATH:+:}\$LD_LIBRARY_PATH\"" >> "$launch_script"
     echo '"${clwrapper}/bin/common-lisp.sh" "$@"' >> "$launch_script"
   '';
-  moveAsdFiles = ''
+  mangleAsdFiles = ''
     find $out/lib/common-lisp/ -name '*.asd' | while read ASD_FILE; do
       KEEP_THIS_ASD=0
       for ALLOWED_ASD in $asdFilesToKeep; do
@@ -55,7 +55,6 @@ let
         ASD_FILE_LENGTH=${"$"}{#ASD_FILE}
         ASD_FILE_SUFFIX_INDEX=$(expr "$ASD_FILE_LENGTH" - "$ALLOWED_ASD_LENGTH")
         ASD_FILE_SUFFIX_INDEX=$(expr "$ASD_FILE_SUFFIX_INDEX" + 1)
-        echo $ALLOWED_ASD $ASD_FILE $ASD_FILE_SUFFIX_INDEX $(expr substr "$ASD_FILE" "$ASD_FILE_SUFFIX_INDEX" "$ASD_FILE_LENGTH")
         if [ "$(expr substr "$ASD_FILE" "$ASD_FILE_SUFFIX_INDEX" "$ASD_FILE_LENGTH")" == "$ALLOWED_ASD" ]; then
           KEEP_THIS_ASD=1
           break
@@ -63,6 +62,10 @@ let
       done
       if [ "$KEEP_THIS_ASD" == 0 ]; then
         mv "$ASD_FILE"{,.sibling}
+      else
+        for PARASITE in $parasites; do
+          sed -i "s/(defsystem \\('\\?\\)\\(:\\|\"\\|\\)$PARASITE\\($\\| \\|\t\\)/#-(and) (defsystem \\1\\2$PARASITE\\3/I" "$ASD_FILE"
+        done
       fi
     done
   '';
@@ -73,7 +76,7 @@ basePackage = {
   dontBuild = true;
 
   inherit deployConfigScript deployLaunchScript;
-  inherit asdFilesToKeep moveAsdFiles;
+  inherit asdFilesToKeep mangleAsdFiles;
   installPhase = ''
     eval "$preInstall"
 
@@ -84,7 +87,7 @@ basePackage = {
 
     ${deployConfigScript}
     ${deployLaunchScript}
-    ${moveAsdFiles}
+    ${mangleAsdFiles}
 
     env -i \
     NIX_LISP="$NIX_LISP" \

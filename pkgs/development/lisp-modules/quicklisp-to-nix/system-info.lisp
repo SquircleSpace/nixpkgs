@@ -139,11 +139,6 @@ quicklisp system, this function does nothing."
     (return-from found-new-dependency))
   (unless *track-dependencies*
     (return-from found-new-dependency))
-  (when (known-parasite-p name)
-    (return-from found-new-dependency))
-  (when (parasitic-relationship-p *main-system* name)
-    (found-new-parasite name)
-    (return-from found-new-dependency))
   (unless (find-system name)
     (return-from found-new-dependency))
   (setf (gethash name *found-dependencies*) t))
@@ -164,15 +159,6 @@ the dependency list."
     (loop :for system :being :the :hash-keys :of *found-dependencies* :do
        (vector-push system systems))
     systems))
-
-(defun host-system (system-name)
-  "If the given system is a parasite, return the name of the system that is its host.
-
-See `*found-parasites*'."
-  (let* ((system (find-system system-name))
-         (host-file (system-file-name system)))
-    (unless (equalp host-file system-name)
-      host-file)))
 
 (defun get-loaded (system)
   "Try to load the named system using quicklisp and record any
@@ -217,63 +203,39 @@ dependencies that are detected during the install."
              (when (gethash missing already-tried)
                (error "Dependency loop? ~A" missing))
              (setf (gethash missing already-tried) t)
-             (let ((parasitic-p (parasitic-relationship-p *main-system* missing)))
-               (if parasitic-p
-                   (found-new-parasite missing)
-                   (found-new-dependency missing))
-               ;; We always want to track the dependencies of systems
-               ;; that share an asd file with the main system.  The
-               ;; whole asd file should be loadable.  Otherwise, we
-               ;; don't want to include transitive dependencies.
-               (let ((*track-dependencies* parasitic-p))
-                 (our-quickload missing)))
+             (found-new-dependency missing)
+             (let ((*track-dependencies* nil))
+               (our-quickload missing))
              (format t "Attempting to load ~A again~%" system)
              (go retry)))))))
 
-(defvar *blacklisted-parasites*
-  #("hu.dwim.stefil/documentation" ;; This system depends on :hu.dwim.stefil.test, but it should depend on hu.dwim.stefil/test
-    "named-readtables/doc" ;; Dependency cycle between named-readtabes and mgl-pax
-    "symbol-munger-test" ;; Dependency cycle between lisp-unit2 and symbol-munger
-    "cl-postgres-simple-date-tests" ;; Dependency cycle between cl-postgres and simple-date
-    "cl-containers/with-variates") ;; Symbol conflict between cl-variates:next-element, metabang.utilities:next-element
-  "A vector of systems that shouldn't be loaded by `quickload-parasitic-systems'.
+(defun host-system (system-name)
+  "Returns the name of the system that defines the given system.
 
-These systems are known to be troublemakers.  In some sense, all
-parasites are troublemakers (you shouldn't define parasitic systems!).
-However, these systems prevent us from generating nix packages and are
-thus doubly evil.")
+For parasites, this returns the host.  For hosts, this returns, well,
+the host."
+  (let* ((system (find-system system-name))
+         (host-file (system-file-name system)))
+    host-file))
 
-(defvar *blacklisted-parasites-table*
-  (let ((ht (make-hash-table :test #'equalp)))
-    (loop :for system :across *blacklisted-parasites* :do
-       (setf (gethash system ht) t))
-    ht)
-  "A hash table where each entry in `*blacklisted-parasites*' is an
-entry in the table.")
+(defun host-system-p (system-name)
+  "Returns t iff the given system has the same name as its asd file."
+  (equalp system-name (host-system system-name)))
 
-(defun blacklisted-parasite-p (system-name)
-  "Returns non-nil if the named system is blacklisted"
-  (nth-value 1 (gethash system-name *blacklisted-parasites-table*)))
-
-(defun quickload-parasitic-systems (system)
-  "Attempt to load all the systems defined in the same asd as the named system.
-
-Blacklisted systems are skipped.  Dependencies of the identified
-parasitic systems will be tracked."
+(defun find-parasitic-systems (system)
   (let* ((asdf-system (asdf:find-system system))
-         (source-file (asdf:system-source-file asdf-system)))
+         (source-file (asdf:system-source-file asdf-system))
+         (result (make-array 0 :adjustable t :fill-pointer t)))
     (cond
       (source-file
        (loop :for system-name :being :the :hash-keys :of asdf/find-system::*registered-systems* :do
-          (when (and (parasitic-relationship-p system system-name)
-                     (not (blacklisted-parasite-p system-name)))
-            (found-new-parasite system-name)
-            (let ((*track-dependencies* t))
-              (our-quickload system-name)))))
+          (when (parasitic-relationship-p system system-name)
+            (vector-push-extend system-name result))))
       (t
        (unless (or (equal "uiop" system)
                    (equal "asdf" system))
-         (warn "No source file for system ~A.  Can't identify parasites." system))))))
+         (warn "No source file for system ~A.  Can't identify parasites." system))))
+    result))
 
 (defun determine-dependencies (system)
   "Load the named system and return a sorted vector containing all the
@@ -288,8 +250,29 @@ Subsequent calls will miss dependencies identified by earlier calls."
                (*trace-output* (make-broadcast-stream))
                (*main-system* system)
                (*track-dependencies* t))
-           (our-quickload system)
-           (quickload-parasitic-systems system))
+           (handler-case
+               (our-quickload system)
+             (asdf/find-component:missing-component (e)
+               (cond
+                 ((host-system-p system)
+                  ;; Game over
+                  (error e))
+
+                 ((equal (asdf/find-component:missing-requires e) system)
+                  ;; One last chance!  There are misbehaving parasites
+                  ;; that are named incorrectly (e.g. cl-async.asd
+                  ;; hosts cl-async-base) and so ASDF can't find them
+                  ;; until the host system is loaded.  The owner of
+                  ;; the system should fix their broken code, but we
+                  ;; still have a chance to generate a working package
+                  ;; out of their mess.  If we claim a dependency on
+                  ;; the host, we mimick the behavior that the clients
+                  ;; of this library must have -- i.e. load the host
+                  ;; before the evil parasite.
+                  (found-new-dependency (host-system system))
+                  (let ((*track-dependencies* nil))
+                    (our-quickload (host-system system)))
+                  (our-quickload system))))))
        (try-again ()
          :report "Start the quickload over again"
          (go retry))
@@ -301,36 +284,15 @@ Subsequent calls will miss dependencies identified by earlier calls."
   (forget-dependency system)
   (values))
 
-(defun parasitic-system-data (parasite-system)
-  "Return a plist of information about the given known-parastic system.
-
-Sometimes we are asked to provide information about a system that is
-actually a parasite.  The only correct response is to point them
-toward the host system.  The nix package for the host system should
-have all the dependencies for this parasite already recorded.
-
-The plist is only meant to be consumed by other parts of
-quicklisp-to-nix."
-  (let ((host-system (host-system parasite-system)))
-    (list
-     :system parasite-system
-     :host host-system
-     :name (string-downcase (format nil "~a" parasite-system))
-     :host-name (string-downcase (format nil "~a" host-system)))))
-
 (defun system-data (system)
   "Produce a plist describing a system.
 
 The plist is only meant to be consumed by other parts of
 quicklisp-to-nix."
-  (when (host-system system)
-    (return-from system-data
-      (parasitic-system-data system)))
-
   (determine-dependencies system)
   (let*
       ((dependencies (sort (found-dependencies) #'string<))
-       (parasites (coerce (sort (found-parasites) #'string<) 'list))
+       (parasites (coerce (sort (find-parasitic-systems system) #'string<) 'list))
        (ql-system (find-system system))
        (ql-release (release ql-system))
        (ql-sibling-systems (provided-systems ql-release))

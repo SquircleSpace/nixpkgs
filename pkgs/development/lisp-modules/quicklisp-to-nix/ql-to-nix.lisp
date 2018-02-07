@@ -134,19 +134,8 @@ This function stores results for memoization purposes in files within
       (return-from system-data value)))
   (format t "Examining system ~A~%" system)
   (let* ((system-info (raw-system-info system))
-         (host (getf system-info :host))
-         (host-name (getf system-info :host-name))
          (name (getf system-info :name)))
-    (when host
-      (return-from system-data
-        (set-memoized-system-data
-         system
-         (list
-          :system (getf system-info :system)
-          :host host
-          :filename (escape-filename name)
-          :host-filename (escape-filename host-name)))))
-
+    
     (let* ((url (getf system-info :url))
            (sha256 (getf system-info :sha256))
            (stated-md5 (getf system-info :md5))
@@ -175,9 +164,6 @@ This function stores results for memoization purposes in files within
         :siblings siblings
         :parasites parasites)))))
 
-(defun parasitic-p (data)
-  (getf data :host))
-
 (defvar *loaded-from* (or *compile-file-truename* *load-truename*)
   "Where this source file is located.")
 
@@ -192,13 +178,9 @@ This function stores results for memoization purposes in files within
 
 (defun nix-invocation (system)
   (let ((data (system-data system)))
-    (if (parasitic-p data)
-        (execute-emb
-         "parasitic-invocation"
-         :env data)
-        (execute-emb
-         "invocation"
-         :env data))))
+    (execute-emb
+     "invocation"
+     :env data)))
 
 (defun systems-closure (systems)
   (let*
@@ -232,12 +214,11 @@ This function stores results for memoization purposes in files within
              collect (list :code (nix-invocation s)))))
     (loop
       for s in closure
-       do (unless (parasitic-p (system-data s))
-            (write-string-into-file
-             (nix-expression s)
-             (format nil "~a/quicklisp-to-nix-output/~a.nix"
-                     target-directory (escape-filename s))
-             :if-exists :supersede)))
+       do (write-string-into-file
+           (nix-expression s)
+           (format nil "~a/quicklisp-to-nix-output/~a.nix"
+                   target-directory (escape-filename s))
+           :if-exists :supersede))
     (write-string-into-file
       (execute-emb
         "top-package"
@@ -306,7 +287,6 @@ Arguments:
     (asdf:make system))
   (register-emb "nix-package" (merge-pathnames #p"nix-package.emb" (this-file)))
   (register-emb "invocation" (merge-pathnames #p"invocation.emb" (this-file)))
-  (register-emb "parasitic-invocation" (merge-pathnames #p"parasitic-invocation.emb" (this-file)))
   (register-emb "top-package" (merge-pathnames #p"top-package.emb" (this-file)))
   (setf uiop:*image-entry-point* #'main)
   (setf uiop:*lisp-interaction* nil)
