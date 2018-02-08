@@ -96,7 +96,6 @@ pgloader
 plump
 proc-parse
 prove
-prove
 query-fs
 quri
 salza2
