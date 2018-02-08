@@ -23,8 +23,10 @@ cl-colors
 cl-cookie
 cl-dbi
 cl-emb
+cl-fad
 cl-fuse
 cl-fuse-meta-fs
+cl-interpol
 cl-json
 cl-l10n
 cl-libuv
@@ -105,6 +107,7 @@ static-vectors
 stumpwm
 swap-bytes
 trivial-backtrace
+trivial-garbage
 trivial-indent
 trivial-mimes
 trivial-types
