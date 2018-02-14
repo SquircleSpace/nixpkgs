@@ -8,6 +8,7 @@ self = rec {
     openssl fuse libuv mysql.connector-c libfixposix libev sqlite
     freetds
     lispPackages.quicklisp-to-nix lispPackages.quicklisp-to-nix-system-info
+    lispPackages.quicklisp-dists-to-nix
   ];
   CPATH = "${libfixposix}/include";
   LD_LIBRARY_PATH = "${openssl.out}/lib:${fuse}/lib:${libuv}/lib:${libev}/lib:${mysql.connector-c}/lib:${postgresql.lib}/lib:${sqlite.out}/lib:${libfixposix}/lib:${freetds}/lib";

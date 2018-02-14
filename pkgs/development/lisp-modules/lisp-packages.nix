@@ -36,6 +36,38 @@ let lispPackages = rec {
     };
   };
 
+  quicklisp-dists-to-nix = stdenv.mkDerivation rec {
+    name = "quicklisp-dists-to-nix";
+    version = "1.0.0";
+
+    coreutils = pkgs.coreutils;
+    inherit quicklisp sbcl;
+    src = ./quicklisp-dists-to-nix;
+
+    buildPhase = ''
+      mkdir -p $out/bin
+      substituteAll $src/generate.sh $out/bin/quicklisp-dists-to-nix
+      chmod a+x $out/bin/quicklisp-dists-to-nix
+    '';
+    installPhase = "true";
+  };
+
+  quicklispClosure = { systems, propagatedBuildInputs ? [] }: stdenv.mkDerivation rec {
+    name = "quicklisp-closure";
+    inherit propagatedBuildInputs;
+    unpackPhase = "true";
+    buildPhase = ''
+      echo init
+      ${quicklisp}/bin/quicklisp --quicklisp-dir ./quicklisp --no-update --noninteractive -- init
+      echo install
+      find
+      ${quicklisp}/bin/quicklisp --quicklisp-dir ./quicklisp --no-update --noninteractive -- install $systems
+    '';
+    installPhase = ''
+      cp -r ./quicklisp/dists/quicklisp/software/ $out
+    '';
+  };
+
   quicklisp-to-nix-system-info = stdenv.mkDerivation rec {
     name = "quicklisp-to-nix-system-info-${version}";
     version = "1.0.0";

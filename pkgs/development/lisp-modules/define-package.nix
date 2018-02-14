@@ -6,7 +6,7 @@ args @ {stdenv, clwrapper, baseName, packageName ? baseName
   , propagatedBuildInputs ? []
   , asdFilesToKeep ? [(builtins.concatStringsSep "" [packageName ".asd"])]}:
 let
-  deployConfigScript = ''
+  deployConfigScript = stdenv.lib.concatStrings [''
     outhash="$out"
     outhash="''${outhash##*/}"
     outhash="''${outhash%%-*}"
@@ -25,7 +25,11 @@ let
     echo "export NIX_LISP_ASDF='$NIX_LISP_ASDF'" >> "$config_script"
     set | grep NIX_CC_WRAPPER_ | sed -e 's@^NIX_CC_WRAPPER@export &@' >> "$config_script"
     echo "export PATH=\"\''${PATH:+\$PATH:}$PATH\"" >> "$config_script"
+  ''
+  (stdenv.lib.optionalString (0 != builtins.length buildSystems) ''
     echo "echo \"\$ASDF_OUTPUT_TRANSLATIONS\" | grep -E '(^|:)$store_translation(:|\$)' >/dev/null || export ASDF_OUTPUT_TRANSLATIONS=\"\''${ASDF_OUTPUT_TRANSLATIONS:+\$ASDF_OUTPUT_TRANSLATIONS:}\"'$store_translation'" >> "$config_script"
+  '')
+  ''
     echo "source '$path_config_script'" >> "$config_script"
     echo "fi" >> "$config_script"
     echo "if test -z \"\''${_''${outhash}_NIX_LISP_PATH_CONFIG}\"; then export _''${outhash}_NIX_LISP_PATH_CONFIG=1; " >> "$path_config_script"
@@ -35,7 +39,7 @@ let
     test -n "$NIX_LISP_LD_LIBRARY_PATH" &&
         echo "export NIX_LISP_LD_LIBRARY_PATH=\"\$NIX_LISP_LD_LIBRARY_PATH\''${NIX_LISP_LD_LIBRARY_PATH:+:}\"'$(echo "$NIX_LISP_LD_LIBRARY_PATH" | tr -d '\n' | tr : '\n' | sort | uniq | tr '\n' ':')'" >> "$path_config_script"
     echo "fi" >> "$path_config_script"
-  '';
+  ''];
   deployLaunchScript = ''
     launch_script="$out"/bin/${args.baseName}-lisp-launcher.sh
     mkdir -p "$(dirname "$launch_script")"
@@ -85,6 +89,7 @@ basePackage = {
     ${deployLaunchScript}
     ${moveAsdFiles}
 
+    ${stdenv.lib.optionalString (0 != builtins.length buildSystems) ''
     env -i \
     NIX_LISP="$NIX_LISP" \
     NIX_LISP_PRELAUNCH_HOOK='nix_lisp_run_single_form "(progn
@@ -96,6 +101,7 @@ basePackage = {
 '') buildSystems}
           )"' \
        "$out/bin/${args.baseName}-lisp-launcher.sh"
+     ''}
 
     eval "$postInstall"
   '';

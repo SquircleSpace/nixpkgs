@@ -4,6 +4,8 @@ op=
 end_param=
 args=()
 cmd_args=()
+update=1
+interactive=1
 
 while let "$#"; do
     if test -n "$end_param" || test "$1" = "${1#--}"; then
@@ -21,6 +23,14 @@ while let "$#"; do
             --quicklisp-dir)
                 NIX_QUICKLISP_DIR="$2";
                 shift; shift;
+            ;;
+            --no-update)
+                update=
+                shift
+            ;;
+            --noninteractive)
+                interactive=
+                shift
             ;;
             --help)
                 echo "Operation: init, run, update, install {system-name}"
@@ -46,12 +56,16 @@ case "$op" in
         cmd_args[${#cmd_args[@]}]="(load \"$NIX_QUICKLISP_DIR/setup.lisp\")"
         for i in "${args[@]}"; do
             cmd_args[${#cmd_args[@]}]="$NIX_LISP_EXEC_CODE"
-            cmd_args[${#cmd_args[@]}]="(ql:quickload :$i)"
+            if test -n "$interactive"; then
+                cmd_args[${#cmd_args[@]}]="(ql:quickload :$i)"
+            else
+                cmd_args[${#cmd_args[@]}]="(handler-case (ql:quickload :$i) (error (e) (declare (ignore e)) (uiop:quit 1)))"
+            fi
         done
         cmd_args[${#cmd_args[@]}]="$NIX_LISP_EXEC_CODE"
         cmd_args[${#cmd_args[@]}]="$NIX_LISP_QUIT"
 
-        "@clwrapper@/bin/common-lisp.sh" "${cmd_args[@]}"
+        exec "@clwrapper@/bin/common-lisp.sh" "${cmd_args[@]}"
     ;;
     update)
         NIX_LISP_SKIP_CODE=1 source "@clwrapper@/bin/common-lisp.sh"
@@ -73,9 +87,18 @@ case "$op" in
         mkdir -p "$NIX_QUICKLISP_DIR"/{dists/quicklisp,tmp,local-projects}
         echo 1 > "$NIX_QUICKLISP_DIR/dists/quicklisp/enabled.txt"
         cp -f "@out@/lib/common-lisp/quicklisp/quicklisp-distinfo.txt" \
-          "$NIX_QUICKLISP_DIR/dists/quicklisp/distinfo.txt"
+           "$NIX_QUICKLISP_DIR/dists/quicklisp/distinfo.txt"
+        cp -f "@out@/lib/common-lisp/quicklisp/asdf.lisp" \
+           "$NIX_QUICKLISP_DIR/asdf.lisp"
+        cp -f "@out@/lib/common-lisp/quicklisp/setup.lisp" \
+           "$NIX_QUICKLISP_DIR/setup.lisp"
+        cp -r "@out@/lib/common-lisp/quicklisp/quicklisp" \
+           "$NIX_QUICKLISP_DIR/quicklisp"
+        find "$NIX_QUICKLISP_DIR" -exec chmod u+w {} +
 
-        NIX_QUICKLISP_DIR="$NIX_QUICKLISP_DIR" "$0" update
+        if test -n "$update"; then
+            NIX_QUICKLISP_DIR="$NIX_QUICKLISP_DIR" "$0" update
+        fi
     ;;
     run)
         NIX_LISP_SKIP_CODE=1 source "@clwrapper@/bin/common-lisp.sh"
