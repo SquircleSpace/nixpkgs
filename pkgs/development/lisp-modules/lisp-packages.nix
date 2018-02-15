@@ -52,6 +52,8 @@ let lispPackages = rec {
     installPhase = "true";
   };
 
+  dists = (import ./dists.nix { inherit pkgs clwrapper stdenv buildLispPackage; fetchurl = pkgs.fetchurl; });
+
   quicklispClosure = { systems, propagatedBuildInputs ? [] }: stdenv.mkDerivation rec {
     name = "quicklisp-closure";
     inherit propagatedBuildInputs;
