@@ -55,7 +55,6 @@ let
         ASD_FILE_LENGTH=${"$"}{#ASD_FILE}
         ASD_FILE_SUFFIX_INDEX=$(expr "$ASD_FILE_LENGTH" - "$ALLOWED_ASD_LENGTH")
         ASD_FILE_SUFFIX_INDEX=$(expr "$ASD_FILE_SUFFIX_INDEX" + 1)
-        echo $ALLOWED_ASD $ASD_FILE $ASD_FILE_SUFFIX_INDEX $(expr substr "$ASD_FILE" "$ASD_FILE_SUFFIX_INDEX" "$ASD_FILE_LENGTH")
         if [ "$(expr substr "$ASD_FILE" "$ASD_FILE_SUFFIX_INDEX" "$ASD_FILE_LENGTH")" == "$ALLOWED_ASD" ]; then
           KEEP_THIS_ASD=1
           break
