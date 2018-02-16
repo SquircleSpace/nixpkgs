@@ -74,6 +74,7 @@ basePackage = {
   inherit src;
 
   dontBuild = true;
+  configurePhase = "true";
 
   inherit deployConfigScript deployLaunchScript;
   inherit asdFilesToKeep moveAsdFiles;
