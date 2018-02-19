@@ -54,6 +54,43 @@ let lispPackages = rec {
 
   dists = (import ./dists.nix { inherit pkgs clwrapper stdenv buildLispPackage; fetchurl = pkgs.fetchurl; });
 
+  quicklisp-to-nix-for-closure = closure: stdenv.mkDerivation rec {
+    name = "quicklisp-to-nix-${version}";
+    version = "1.0.0";
+
+    # We can't depend on all the quicklisp releases directly.  There
+    # are too many!  Instead we'll depend on a file containing the
+    # path to all the releases.  quicklisp-to-nix will read this file
+    # and modify the ASDF search path itself.
+    releaseListInput = stdenv.lib.concatMapStrings (release: ''
+      ${release}
+    '') (builtins.attrValues closure.byRelease);
+    systemListInput = stdenv.lib.concatMapStrings (systemName: ''
+      ${systemName}
+    '') (builtins.attrNames closure.bySystem);
+    passAsFile = [ "releaseListInput" "systemListInput" ];
+
+    src = ./quicklisp-to-nix;
+    buildPhase = ''
+      systemListPath="$out/etc/quicklisp-to-nix/system-list"
+      export systemListPath
+      releaseListPath="$out/etc/quicklisp-to-nix/release-list"
+      export releaseListPath
+      substituteAll $src/quicklisp-to-nix.lisp quicklisp-to-nix.lisp
+      ${sbcl}/bin/sbcl --load quicklisp-to-nix.lisp
+    '';
+    installPhase = ''
+      mkdir -p $out/bin
+      cp quicklisp-to-nix $out/bin
+      mkdir -p "$(dirname "$systemListPath")"
+      cp $systemListInputPath $systemListPath
+      mkdir -p "$(dirname "releaseListPath")"
+      cp $releaseListInputPath $releaseListPath
+    '';
+    dontStrip = true;
+  };
+  quicklisp-to-nix = quicklisp-to-nix-for-closure dists.quicklisp;
+
   quicklispClosure = { systems, propagatedBuildInputs ? [] }: stdenv.mkDerivation rec {
     name = "quicklisp-closure";
     inherit propagatedBuildInputs;
@@ -68,48 +105,6 @@ let lispPackages = rec {
     installPhase = ''
       cp -r ./quicklisp/dists/quicklisp/software/ $out
     '';
-  };
-
-  quicklisp-to-nix-system-info = stdenv.mkDerivation rec {
-    name = "quicklisp-to-nix-system-info-${version}";
-    version = "1.0.0";
-    src = ./quicklisp-to-nix;
-    nativeBuildInputs = [sbcl];
-    buildInputs = [
-      lispPackages.quicklisp coreutils
-    ];
-    touch = coreutils;
-    nix-prefetch-url = nix;
-    inherit quicklisp;
-    buildPhase = ''
-      ${sbcl}/bin/sbcl --eval '(load #P"${asdf}/lib/common-lisp/asdf/build/asdf.lisp")' --load $src/system-info.lisp --eval '(ql-to-nix-system-info::dump-image)'
-    '';
-    installPhase = ''
-      mkdir -p $out/bin
-      cp quicklisp-to-nix-system-info $out/bin
-    '';
-    dontStrip = true;
-  };
-
-  quicklisp-to-nix = stdenv.mkDerivation rec {
-    name = "quicklisp-to-nix-${version}";
-    version = "1.0.0";
-    src = ./quicklisp-to-nix;
-    buildDependencies = [sbcl quicklisp-to-nix-system-info];
-    buildInputs = with pkgs.lispPackages; [md5 cl-emb alexandria external-program];
-    touch = coreutils;
-    nix-prefetch-url = nix;
-    inherit quicklisp;
-    deps = [];
-    system-info = quicklisp-to-nix-system-info;
-    buildPhase = ''
-      ${clwrapper}/bin/cl-wrapper.sh "${sbcl}/bin/sbcl" --eval '(load #P"${asdf}/lib/common-lisp/asdf/build/asdf.lisp")' --load $src/ql-to-nix.lisp --eval '(ql-to-nix::dump-image)'
-    '';
-    installPhase = ''
-      mkdir -p $out/bin
-      cp quicklisp-to-nix $out/bin
-    '';
-    dontStrip = true;
   };
 };
 in lispPackages
